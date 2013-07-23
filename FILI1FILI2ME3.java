@@ -5,6 +5,7 @@ public class FILI1FILI2ME3 {
 	private String input;
 	private String[][] table;
 	private List<Character> actionRef;
+	private List<String> grammarRef;
 	private Stack<Integer> stack;
 	
 	public static void main(String[] args) {
@@ -18,8 +19,20 @@ public class FILI1FILI2ME3 {
 		}
 		else
 			input = join(args);
+		
+		input+='$';
+
 		stack = new Stack<Integer>();
 		actionRef = Arrays.asList('+', '*', 'a','b','$','E','T','F');
+		grammarRef = Arrays.asList(
+		"E:=E+T",
+		"E:=T",
+		"T:=TF",
+		"T:=F",
+		"F:=F*",
+		"F:=a",
+		"F:=b"						   
+		);
 		
 		initTable();
 		parse();
@@ -31,6 +44,7 @@ public class FILI1FILI2ME3 {
 			sb.append(args[i]);
 		return sb.toString();
 	}
+	
 	
 	private void initTable() {
 		table = new String[10][8];
@@ -96,21 +110,43 @@ public class FILI1FILI2ME3 {
 		char token = input.charAt(index);
 		return actionRef.indexOf(token);
 	}
+	private int codeB(char c){
+		return actionRef.indexOf(c);
+	}
+	
+	private String[] extractGrammar(int index){
+		String st = grammarRef.get(index-1);
+		return st.split(":=");
+	}
 	
 	private void parse() {
 		int currentState;
 		String action;
 		int inputIndex = 0;
+		int actionIndex =0;
 		
+		String[] tmp=new String[2];
+		
+		actionIndex=code(inputIndex);
 		stack.push(0);
-		while(!stack.isEmpty() && inputIndex <= input.length()) {
+		
+		while(!stack.isEmpty() && inputIndex < input.length()) {
 			currentState = stack.peek();
-			action = table[currentState][code(inputIndex)];  
+			
+			action = table[currentState][actionIndex];  
 			if (action.startsWith("S")) { // shift
 				inputIndex++;
+				actionIndex=code(inputIndex);
 				stack.push(Integer.parseInt(action.substring(1)));
+				
 			} else if (action.startsWith("R")) { // reduce
-				stack.pop();
+				
+				tmp=extractGrammar(Integer.parseInt(action.substring(1)));
+				for(int i=0; i<tmp[1].length(); i++)
+					stack.pop();
+				actionIndex=codeB(tmp[0].charAt(0));
+				
+				
 			} else if (action.equals("error")) {
 				System.out.println("Not accepted");
 				System.exit(0);
